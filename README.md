@@ -1,6 +1,6 @@
 # aqi-orb
 
-This repo contains the code for a US government EPA (Environmental Protection Agency) AQI (Air Quality Index) color "orb", similar in appearance to the Purple Air "PA-I" indoor air quality sensor, but smaller. This orb can be placed on any surface in your house and it will monitor to an outdoor sensor and reflect its PM2.5 sensor value with with the corresponding AQI color. If you have your own PurpleAir outdoor sensor, you can use that. If you don't then you can use any sensor shown on the PurpleAir map. It looks like this:
+This repo contains the code for a US government EPA (Environmental Protection Agency) AQI (Air Quality Index) color "orb", similar in appearance to the Purple Air "PA-I" indoor air quality sensor, but smaller. This orb can be placed on any surface in your house and it will monitor a nearby outdoor sensor and reflect its PM2.5 sensor value with with the corresponding AQI color. If you have your own PurpleAir outdoor sensor, you can use that. If you don't then you can use any sensor shown on the PurpleAir map. It looks like this:
 
 ![orb](https://github.com/MegaMosquito/aqi-orb/raw/master/aqi-orb.png)
 Figure 1: My completed AQI "orb" (on left) running beside the Purple Air PA-I indoor sensor. Outdoor air here in California is not good today due to several wildfires.
