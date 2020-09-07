@@ -54,14 +54,14 @@ keep_on_swimming = True
 table = [
   [      0.0,     0.0,    0,   0,   0, 255,   0 ],
   [      0.0,    12.1,    0,  50,   0, 255,   0 ],
-  [     12.1,    35.5,   51, 100, 255, 255,   0 ],
-  [     35.5,    55.5,  101, 150, 255, 128,   0 ],
+  [     12.1,    35.5,   51, 100, 128, 128,   0 ],
+  [     35.5,    55.5,  101, 150, 196,  64,   0 ],
   [     55.5,   150.5,  151, 200, 255,   0,   0 ],
   [    150.5,   250.5,  201, 300, 128,   0, 128 ],
-  [    250.5,   350.5,  301, 400, 128,   0,  64 ],
-  [    350.5,   500.5,  401, 500, 128,   0,  64 ],
-  [    500.5, 99999.9,  501, 999, 128,   0,  64 ],
-  [  99999.9,100000.0,  999,1000, 128,   0,  64 ]
+  [    250.5,   350.5,  301, 400,  96,   0,  32 ],
+  [    350.5,   500.5,  401, 500,  96,   0,  32 ],
+  [    500.5, 99999.9,  501, 999,  96,   0,  32 ],
+  [  99999.9,100000.0,  999,1000,  96,   0,  32 ]
 ]
 
 # Debug flags
@@ -69,7 +69,7 @@ DEBUG_AQI = False
 DEBUG_RGB = False
 DEBUG_REQ_THREAD = False
 DEBUG_MAIN_LOOP = False
-DEBUG_SIGNAL = True
+DEBUG_SIGNAL = False
 
 # Debug print
 def debug(flag, str):
@@ -166,9 +166,10 @@ if __name__ == '__main__':
 
   if DEBUG_RGB:
     debug(DEBUG_RGB, '--> Testing RGB value calculations:')
-    for x in range(0, 500, 10):
+    for x in range(0, 350, 5):
       rgb = pm25_to_rgb(x)
-      debug(DEBUG_AQI, ('*** PM2.5 == %0.1f -->RGBI == (%d,%d,%d) ***' % (x, rgb[0], rgb[1], rgb[2])))
+      a = pm25_to_aqi(x)
+      debug(DEBUG_RGB, ('*** PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (x, a, rgb[0], rgb[1], rgb[2])))
       neopixels.fill(rgb)
       time.sleep(0.5)
 
@@ -182,7 +183,8 @@ if __name__ == '__main__':
   while keep_on_swimming:
     time.sleep(SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC)
     rgb = pm25_to_rgb(pm25)
-    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> RGB == (%d,%d,%d) ***' % (pm25, rgb[0], rgb[1], rgb[2])))
+    a = pm25_to_aqi(pm25)
+    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (pm25, a, rgb[0], rgb[1], rgb[2])))
     neopixels.fill(rgb)
 
   debug(DEBUG_SIGNAL, 'Exited main thread.')
