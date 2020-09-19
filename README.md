@@ -10,7 +10,7 @@ To be honest, I would have just bought this as a product from PurpleAir if they 
 
  - I used a Raspberry Pi zero WH ($15USD) but a ZeroW ($10USD) would work just as well
  - I used an 8-neopixel ring like this one ($9USD): https://smile.amazon.com/ACROBOTIC-8-Pixel-Addressable-24-Bit-WS2812B/dp/B07HLS587W/ref=sr_1_7?dchild=1&keywords=neopixel+ring&qid=1599420043&sr=8-7 but in retrospect I think a single neopixel would be better (the ring is very bright!)
- - I installed a microUSB socket ($0.50USD) identical to thsi one: https://smile.amazon.com/HiLetgo-Adapter-Connector-Converter-pinboard/dp/B07W844N43/ref=sr_1_4?dchild=1&keywords=micro+usb+socket&qid=1599420174&sr=8-4 but you could just plug in a cable into the Raspberry Pi sock. I just wanted to be a little more elegant about it.
+ - I installed a microUSB socket ($0.50USD) identical to this one: https://smile.amazon.com/HiLetgo-Adapter-Connector-Converter-pinboard/dp/B07W844N43/ref=sr_1_4?dchild=1&keywords=micro+usb+socket&qid=1599420174&sr=8-4 but you could just plug in a cable into the Raspberry Pi power socket. I just wanted to be a little more elegant about it.
  
 In addition to the above, I used wires, solder, and some plastic for the 3D prints (but the costs for all of that were maybe $1USD I would guess). Of course, you need a soldering tool, and either your own 3D printer or access to a friend's or use a commercial 3D printing service.
 
