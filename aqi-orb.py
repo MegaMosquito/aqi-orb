@@ -13,7 +13,7 @@ import threading
 import time
 
 # Global for the URL of the PurpleAir sensor to monitor
-SENSOR_URL = 'https://www.purpleair.com/json?show=51587'
+SENSOR_URL = 'https://www.purpleair.com/json?show=63619'
 
 # Import the required libraries
 import board
@@ -52,9 +52,9 @@ keep_on_swimming = True
 # [      bot,     top,  min, max,   r,   g,   b ]
 # [---------------------------------------------]
 table = [
-  [      0.0,     0.0,    0,   0,   0, 255,   0 ],
-  [      0.0,    12.1,    0,  50,   0, 255,   0 ],
-  [     12.1,    35.5,   51, 100, 128, 128,   0 ],
+  [      0.0,     0.0,    0,   0,   0, 192,   0 ],
+  [      0.0,    12.1,    0,  50,   0, 192,   0 ],
+  [     12.1,    35.5,   51, 100,  96,  96,   0 ],
   [     35.5,    55.5,  101, 150, 192,  64,   0 ],
   [     55.5,   150.5,  151, 200, 192,   0,   0 ],
   [    150.5,   250.5,  201, 300, 192,   0,  16 ],
@@ -182,6 +182,10 @@ if __name__ == '__main__':
   debug(DEBUG_MAIN_LOOP, "Main loop is starting...")
   while keep_on_swimming:
     rgb = pm25_to_rgb(pm25)
+    r = rgb[0]
+    g = rgb[1]
+    b = rgb[2]
+    rgb = (r / 2, g / 2, b / 2)
     a = pm25_to_aqi(pm25)
     debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (pm25, a, rgb[0], rgb[1], rgb[2])))
     neopixels.fill(rgb)
