@@ -32,11 +32,13 @@ neopixels = None
 neopixels = neopixel.NeoPixel(neopixel_pin, neopixel_count)
 
 # Globals to contain the monitored PM2.5 and AQI values
-pm25 = 0
-aqi = 0
+g_pm25 = -1
 
 # Global to keep the threads looping
 keep_on_swimming = True
+
+# Color to show when offline
+OFFLINE_COLOR = (0, 0, 128)
 
 # Global table of AQI breakpoints
 # Official website uses these RGB colors, but some don't work well on NeoPixels
@@ -52,9 +54,9 @@ keep_on_swimming = True
 # [      bot,     top,  min, max,   r,   g,   b ]
 # [---------------------------------------------]
 table = [
-  [      0.0,     0.0,    0,   0,   0, 192,   0 ],
-  [      0.0,    12.1,    0,  50,   0, 192,   0 ],
-  [     12.1,    35.5,   51, 100,  96,  96,   0 ],
+  [      0.0,     0.0,    0,   0,   0, 128,   0 ],
+  [      0.0,    12.1,    0,  50,   0, 128,   0 ],
+  [     12.1,    35.5,   51, 100,  64,  64,   0 ],
   [     35.5,    55.5,  101, 150, 192,  64,   0 ],
   [     55.5,   150.5,  151, 200, 192,   0,   0 ],
   [    150.5,   250.5,  201, 300, 192,   0,  16 ],
@@ -99,6 +101,8 @@ def pm25_to_aqi(pm25):
 
 # Given a PM2.5 value, return the applicable AQI color (r,g,b)
 def pm25_to_rgb(pm25):
+  if pm25 < 0:
+    return OFFLINE_COLOR
   i = pm25_to_row_num(pm25)
   row = table[i]
   rb = row[0]
@@ -121,9 +125,8 @@ REQUEST_TIMEOUT_SEC = 30
 SLEEP_BETWEEN_AQI_CHECKS_SEC = 15
 class AqiThread(threading.Thread):
   def run(self):
-    global pm25
+    global g_pm25
     debug(DEBUG_REQ_THREAD, "API monitor thread started!")
-    global keep_on_swimming
     while keep_on_swimming:
       try:
         debug(DEBUG_REQ_THREAD, ('REQ: url="%s", t/o=%d' % (SENSOR_URL, REQUEST_TIMEOUT_SEC)))
@@ -131,11 +134,12 @@ class AqiThread(threading.Thread):
         if 200 == r.status_code:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [succ]' % (SENSOR_URL)))
           j = r.json()
-          pm25 = float(j['results'][0]['PM2_5Value'])
-          aqi = pm25_to_aqi(pm25)
-          debug(DEBUG_REQ_THREAD, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (pm25, aqi)))
+          g_pm25 = float(j['results'][0]['PM2_5Value'])
+          aqi = pm25_to_aqi(g_pm25)
+          debug(DEBUG_REQ_THREAD, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (g_pm25, aqi)))
         else:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [fail]' % (SENSOR_URL)))
+          g_pm25 = -1
       except requests.exceptions.Timeout:
         debug(DEBUG_REQ_THREAD, ('--> "%s" [time]' % (SENSOR_URL)))
       except:
@@ -161,15 +165,15 @@ if __name__ == '__main__':
     debug(DEBUG_AQI, '--> Testing AQI value calculations:')
     #for x in range(0, 999, 1):
     for x in [0.0, 12.0, 12.1, 34.4, 35.5, 55.4, 55.5, 150.4, 150.5, 250.4, 250.5, 350.4, 350.5, 500.4, 500.5, 99999.9, 1000000]:
-      a = pm25_to_aqi(x)
-      debug(DEBUG_AQI, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (x, a)))
+      aqi = pm25_to_aqi(x)
+      debug(DEBUG_AQI, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (x, aqi)))
 
   if DEBUG_RGB:
     debug(DEBUG_RGB, '--> Testing RGB value calculations:')
-    for x in range(0, 350, 5):
+    for x in range(-15, 350, 5):
       rgb = pm25_to_rgb(x)
-      a = pm25_to_aqi(x)
-      debug(DEBUG_RGB, ('*** PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (x, a, rgb[0], rgb[1], rgb[2])))
+      aqi = pm25_to_aqi(x)
+      debug(DEBUG_RGB, ('*** PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (x, aqi, rgb[0], rgb[1], rgb[2])))
       neopixels.fill(rgb)
       time.sleep(0.5)
 
@@ -177,17 +181,17 @@ if __name__ == '__main__':
   aqi_check = AqiThread()
   aqi_check.start()
 
-  # Loop forever checking the global AQI value and setting the NeoPixels
+  # Loop forever checking global PM2.5, computing AQI and setting NeoPixels
   SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC = 15
   debug(DEBUG_MAIN_LOOP, "Main loop is starting...")
   while keep_on_swimming:
-    rgb = pm25_to_rgb(pm25)
+    rgb = pm25_to_rgb(g_pm25)
     r = rgb[0]
     g = rgb[1]
     b = rgb[2]
     rgb = (r / 2, g / 2, b / 2)
-    a = pm25_to_aqi(pm25)
-    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (pm25, a, rgb[0], rgb[1], rgb[2])))
+    aqi = pm25_to_aqi(g_pm25)
+    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (g_pm25, aqi, rgb[0], rgb[1], rgb[2])))
     neopixels.fill(rgb)
     time.sleep(SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC)
 
