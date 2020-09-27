@@ -38,7 +38,7 @@ g_pm25 = -1
 keep_on_swimming = True
 
 # Color to show when offline
-OFFLINE_COLOR = (0, 0, 128)
+OFFLINE_COLOR = (0, 0, 255)
 
 # Global table of AQI breakpoints
 # Official website uses these RGB colors, but some don't work well on NeoPixels
@@ -120,13 +120,13 @@ def pm25_to_rgb(pm25):
   b = b1 + f * (b2 - b1)
   return (r, g, b)
 
-# The thread that monitors the AQI and sets the NeoPixels accordingly
+# Thread that monitors the AQI and updates the `g_pm25` global accordingly
 REQUEST_TIMEOUT_SEC = 30
 SLEEP_BETWEEN_AQI_CHECKS_SEC = 15
 class AqiThread(threading.Thread):
   def run(self):
     global g_pm25
-    debug(DEBUG_REQ_THREAD, "API monitor thread started!")
+    debug(DEBUG_REQ_THREAD, "AQI monitor thread started!")
     while keep_on_swimming:
       try:
         debug(DEBUG_REQ_THREAD, ('REQ: url="%s", t/o=%d' % (SENSOR_URL, REQUEST_TIMEOUT_SEC)))
@@ -147,7 +147,7 @@ class AqiThread(threading.Thread):
       time.sleep(SLEEP_BETWEEN_AQI_CHECKS_SEC)
     debug(DEBUG_SIGNAL, 'Exited AQI thread.')
 
-# Main program (to start the web server thread)
+# Main program
 if __name__ == '__main__':
 
   def signal_handler(signum, frame):
@@ -185,14 +185,16 @@ if __name__ == '__main__':
   SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC = 15
   debug(DEBUG_MAIN_LOOP, "Main loop is starting...")
   while keep_on_swimming:
-    rgb = pm25_to_rgb(g_pm25)
-    r = rgb[0]
-    g = rgb[1]
-    b = rgb[2]
-    rgb = (r / 2, g / 2, b / 2)
     aqi = pm25_to_aqi(g_pm25)
-    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (g_pm25, aqi, rgb[0], rgb[1], rgb[2])))
+    rgb = pm25_to_rgb(g_pm25)
+    # Dim all the normal colors (NeoPixels are very bright!)
+    if rgb != OFFLINE_COLOR:
+      r = rgb[0]
+      g = rgb[1]
+      b = rgb[2]
+      rgb = (r / 4, g / 4, b / 4)
     neopixels.fill(rgb)
+    debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (g_pm25, aqi, rgb[0], rgb[1], rgb[2])))
     time.sleep(SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC)
 
   debug(DEBUG_SIGNAL, 'Exited main thread.')
