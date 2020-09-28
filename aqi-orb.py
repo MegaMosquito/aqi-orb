@@ -123,6 +123,9 @@ def pm25_to_rgb(pm25):
 # Thread that monitors the AQI and updates the `g_pm25` global accordingly
 REQUEST_TIMEOUT_SEC = 30
 SLEEP_BETWEEN_AQI_CHECKS_SEC = 15
+# How main request failures before setting `g_pm25` to -1?
+FAIL_COUNT_TOLERANCE = 8
+g_fail_count = 0
 class AqiThread(threading.Thread):
   def run(self):
     global g_pm25
@@ -133,17 +136,22 @@ class AqiThread(threading.Thread):
         r = requests.get(SENSOR_URL, timeout=REQUEST_TIMEOUT_SEC)
         if 200 == r.status_code:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [succ]' % (SENSOR_URL)))
+          g_fail_count = 0
           j = r.json()
           g_pm25 = float(j['results'][0]['PM2_5Value'])
           aqi = pm25_to_aqi(g_pm25)
           debug(DEBUG_REQ_THREAD, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (g_pm25, aqi)))
         else:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [fail]' % (SENSOR_URL)))
-          g_pm25 = -1
+          g_fail_count += 1
       except requests.exceptions.Timeout:
         debug(DEBUG_REQ_THREAD, ('--> "%s" [time]' % (SENSOR_URL)))
+        g_fail_count += 1
       except:
         debug(DEBUG_REQ_THREAD, ('--> "%s" [expt]' % (SENSOR_URL)))
+        g_fail_count += 1
+      if g_fail_count > FAIL_COUNT_TOLERANCE:
+        g_pm25 = -1
       time.sleep(SLEEP_BETWEEN_AQI_CHECKS_SEC)
     debug(DEBUG_SIGNAL, 'Exited AQI thread.')
 
