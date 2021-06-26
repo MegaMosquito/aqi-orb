@@ -4,6 +4,7 @@
 # Written by Glen Darling, Sept. 2020.
 #
 
+from datetime import datetime
 import json
 import requests
 import signal
@@ -11,6 +12,10 @@ import subprocess
 import sys
 import threading
 import time
+
+# LEDs are dimmed before MORNING_HOUR and after EVENING_HOUR (24hr clock!)
+MORNING_HOUR = 6
+EVENING_HOUR = 20
 
 # Global for the URL of the PurpleAir sensor to monitor
 SENSOR_URL = 'https://www.purpleair.com/json?show=63619'
@@ -71,6 +76,7 @@ DEBUG_AQI = False
 DEBUG_RGB = False
 DEBUG_REQ_THREAD = False
 DEBUG_MAIN_LOOP = False
+DEBUG_DIMMING = False
 DEBUG_SIGNAL = False
 
 # Debug print
@@ -195,12 +201,20 @@ if __name__ == '__main__':
   while keep_on_swimming:
     aqi = pm25_to_aqi(g_pm25)
     rgb = pm25_to_rgb(g_pm25)
+    debug(DEBUG_DIMMING, ('      Original:      (%3d,%3d,%3d)' % (rgb[0], rgb[1], rgb[2])))
     # Dim all the normal colors (NeoPixels are very bright!)
     if rgb != OFFLINE_COLOR:
       r = rgb[0]
       g = rgb[1]
       b = rgb[2]
       rgb = (r / 4, g / 4, b / 4)
+      debug(DEBUG_DIMMING, ('      Dimmed:        (%3d,%3d,%3d)' % (rgb[0], rgb[1], rgb[2])))
+    # Further dim in the evening/night
+    now = datetime.now()
+    hr = int(now.strftime("%H"))
+    if hr < MORNING_HOUR or hr > EVENING_HOUR:
+      rgb = (int(rgb[0] / 2), int(rgb[1] / 2), int(rgb[2] / 2))
+      debug(DEBUG_DIMMING, ('      Night dimmed:  (%3d,%3d,%3d)' % (rgb[0], rgb[1], rgb[2])))
     neopixels.fill(rgb)
     debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (g_pm25, aqi, rgb[0], rgb[1], rgb[2])))
     time.sleep(SLEEP_BETWEEN_NEOPIXEL_UPDATES_SEC)

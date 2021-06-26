@@ -5,11 +5,21 @@ build:
 
 dev: build stop
 	-docker rm -f aqi-orb 2> /dev/null || :
-	docker run -it --privileged --name aqi-orb --volume `pwd`:/outside ibmosquito/aqi-orb:1.0.0 /bin/bash
+	docker run -it --volume `pwd`:/outside \
+	  --privileged \
+	  --volume '/etc/timezone:/etc/timezone:ro' \
+	  --volume '/etc/localtime:/etc/localtime:ro' \
+	  --name aqi-orb \
+	  ibmosquito/aqi-orb:1.0.0 /bin/bash
 
 run: stop
 	-docker rm -f aqi-orb 2>/dev/null || :
-	docker run -d --restart=unless-stopped --privileged --name aqi-orb ibmosquito/aqi-orb:1.0.0
+	docker run -d --restart=unless-stopped \
+	  --privileged \
+	  --volume '/etc/timezone:/etc/timezone:ro' \
+	  --volume '/etc/localtime:/etc/localtime:ro' \
+	  --name aqi-orb \
+	  ibmosquito/aqi-orb:1.0.0
 
 exec:
 	docker exec -it aqi-orb /bin/sh
