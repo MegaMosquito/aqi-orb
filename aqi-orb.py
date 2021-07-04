@@ -131,32 +131,32 @@ REQUEST_TIMEOUT_SEC = 30
 SLEEP_BETWEEN_AQI_CHECKS_SEC = 15
 # How main request failures before setting `g_pm25` to -1?
 FAIL_COUNT_TOLERANCE = 8
-g_fail_count = 0
 class AqiThread(threading.Thread):
   def run(self):
-    global g_pm25
     debug(DEBUG_REQ_THREAD, "AQI monitor thread started!")
+    global g_pm25
+    fail_count = 0
     while keep_on_swimming:
       try:
         debug(DEBUG_REQ_THREAD, ('REQ: url="%s", t/o=%d' % (SENSOR_URL, REQUEST_TIMEOUT_SEC)))
         r = requests.get(SENSOR_URL, timeout=REQUEST_TIMEOUT_SEC)
         if 200 == r.status_code:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [succ]' % (SENSOR_URL)))
-          g_fail_count = 0
+          fail_count = 0
           j = r.json()
           g_pm25 = float(j['results'][0]['PM2_5Value'])
           aqi = pm25_to_aqi(g_pm25)
           debug(DEBUG_REQ_THREAD, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (g_pm25, aqi)))
         else:
           debug(DEBUG_REQ_THREAD, ('--> "%s" [fail]' % (SENSOR_URL)))
-          g_fail_count += 1
+          fail_count += 1
       except requests.exceptions.Timeout:
         debug(DEBUG_REQ_THREAD, ('--> "%s" [time]' % (SENSOR_URL)))
-        g_fail_count += 1
+        fail_count += 1
       except:
         debug(DEBUG_REQ_THREAD, ('--> "%s" [expt]' % (SENSOR_URL)))
-        g_fail_count += 1
-      if g_fail_count > FAIL_COUNT_TOLERANCE:
+        fail_count += 1
+      if fail_count > FAIL_COUNT_TOLERANCE:
         g_pm25 = -1
       time.sleep(SLEEP_BETWEEN_AQI_CHECKS_SEC)
     debug(DEBUG_SIGNAL, 'Exited AQI thread.')
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     now = datetime.now()
     hr = int(now.strftime("%H"))
     if hr < MORNING_HOUR or hr > EVENING_HOUR:
-      rgb = (int(rgb[0] / 2), int(rgb[1] / 2), int(rgb[2] / 2))
+      rgb = (int(rgb[0] / 3), int(rgb[1] / 3), int(rgb[2] / 3))
       debug(DEBUG_DIMMING, ('      Night dimmed:  (%3d,%3d,%3d)' % (rgb[0], rgb[1], rgb[2])))
     neopixels.fill(rgb)
     debug(DEBUG_MAIN_LOOP, ('--> PM2.5 == %0.1f --> AQI == %d --> RGB == (%d,%d,%d) ***' % (g_pm25, aqi, rgb[0], rgb[1], rgb[2])))
