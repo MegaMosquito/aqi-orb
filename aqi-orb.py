@@ -101,14 +101,14 @@ def debug(flag, str):
     print(str)
 
 # Invoke the PurpleAir "sensors" API for my sensor with my API key
-def get_sensor():
-  url = PURPLE_AIR_SENSOR_URL + str(MY_PURPLE_AIR_SENSOR_INDEX)
+def get_sensor(i, t):
+  url = PURPLE_AIR_SENSOR_URL + str(i)
   headers = {
     PURPLE_AIR_API_KEY_HEADER:MY_PURPLE_AIR_READ_API_KEY,
     'Content-Type':'json'
   }
   debug(DEBUG_API, 'API request: "' + url + '"')
-  r = requests.get(url, headers=headers)
+  r = requests.get(url, headers=headers, timeout=t)
   if (200 == r.status_code):
     debug(DEBUG_API, '--> [success]')
   else:
@@ -170,7 +170,7 @@ class AqiThread(threading.Thread):
     while keep_on_swimming:
       try:
         debug(DEBUG_REQ_THREAD, ('REQ: t/o=%d' % (REQUEST_TIMEOUT_SEC)))
-        r = get_sensor()
+        r = get_sensor(MY_PURPLE_AIR_SENSOR_INDEX, REQUEST_TIMEOUT_SEC)
         if 200 == r.status_code:
           debug(DEBUG_REQ_THREAD, '--> [success]')
           fail_count = 0
