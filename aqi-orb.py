@@ -13,12 +13,27 @@ import sys
 import threading
 import time
 
-# LEDs are dimmed before MORNING_HOUR and after EVENING_HOUR (24hr clock!)
-MORNING_HOUR = 6
+# LEDs are dimmed from EVENING_HOUR through MORNING_HOUR (use 24hr clock!)
 EVENING_HOUR = 20
+MORNING_HOUR = 6
 
-# Global for the URL of the PurpleAir sensor to monitor
-SENSOR_URL = 'https://www.purpleair.com/json?show=63619'
+# This code connects to the central PurpleAir cloud APIs
+# Example:
+#   curl --header "X-API-Key: *****" https://api.purpleair.com/v1/keys
+#   curl --header "X-API-Key: *****" https://api.purpleair.com/v1/sensors/*****
+# Full API documentation:
+#   https://api.purpleair.com
+# More info:
+#    https://community.purpleair.com/t/making-api-calls-with-the-purpleair-api/180
+#
+# API Details:
+PURPLE_AIR_SENSOR_URL       = 'https://api.purpleair.com/v1/sensors/'
+PURPLE_AIR_API_KEY_HEADER   = 'X-API-Key'
+#
+# My credentials and sensor ID (edit these to contain your own values):
+MY_PURPLE_AIR_READ_API_KEY  = '*****'
+MY_PURPLE_AIR_WRITE_API_KEY = '*****'
+MY_PURPLE_AIR_SENSOR_INDEX  = *****
 
 # Import the required libraries
 import board
@@ -72,6 +87,7 @@ table = [
 ]
 
 # Debug flags
+DEBUG_API = False
 DEBUG_AQI = False
 DEBUG_RGB = False
 DEBUG_REQ_THREAD = False
@@ -83,6 +99,21 @@ DEBUG_SIGNAL = False
 def debug(flag, str):
   if flag:
     print(str)
+
+# Invoke the PurpleAir "sensors" API for my sensor with my API key
+def get_sensor():
+  url = PURPLE_AIR_SENSOR_URL + str(MY_PURPLE_AIR_SENSOR_INDEX)
+  headers = {
+    PURPLE_AIR_API_KEY_HEADER:MY_PURPLE_AIR_READ_API_KEY,
+    'Content-Type':'json'
+  }
+  debug(DEBUG_API, 'API request: "' + url + '"')
+  r = requests.get(url, headers=headers)
+  if (200 == r.status_code):
+    debug(DEBUG_API, '--> [success]')
+  else:
+    debug(DEBUG_API, '--> [error] status code: ' + r.status_code)
+  return r
 
 # Given a PM2.5 value, return the table row number that is applicable:
 def pm25_to_row_num(pm25):
@@ -126,10 +157,10 @@ def pm25_to_rgb(pm25):
   b = b1 + f * (b2 - b1)
   return (r, g, b)
 
-# Thread that monitors the AQI and updates the `g_pm25` global accordingly
+# Thread that monitors the AQI and updates the 'g_pm25' global accordingly
 REQUEST_TIMEOUT_SEC = 30
 SLEEP_BETWEEN_AQI_CHECKS_SEC = 15
-# How main request failures before setting `g_pm25` to -1?
+# How main request failures before setting 'g_pm25' to -1?
 FAIL_COUNT_TOLERANCE = 8
 class AqiThread(threading.Thread):
   def run(self):
@@ -138,23 +169,23 @@ class AqiThread(threading.Thread):
     fail_count = 0
     while keep_on_swimming:
       try:
-        debug(DEBUG_REQ_THREAD, ('REQ: url="%s", t/o=%d' % (SENSOR_URL, REQUEST_TIMEOUT_SEC)))
-        r = requests.get(SENSOR_URL, timeout=REQUEST_TIMEOUT_SEC)
+        debug(DEBUG_REQ_THREAD, ('REQ: t/o=%d' % (REQUEST_TIMEOUT_SEC)))
+        r = get_sensor()
         if 200 == r.status_code:
-          debug(DEBUG_REQ_THREAD, ('--> "%s" [succ]' % (SENSOR_URL)))
+          debug(DEBUG_REQ_THREAD, '--> [success]')
           fail_count = 0
           j = r.json()
-          g_pm25 = float(j['results'][0]['PM2_5Value'])
+          g_pm25 = float(j['sensor']['pm2.5_atm'])
           aqi = pm25_to_aqi(g_pm25)
           debug(DEBUG_REQ_THREAD, ('*** PM2.5 == %0.1f --> AQI == %d ***' % (g_pm25, aqi)))
         else:
-          debug(DEBUG_REQ_THREAD, ('--> "%s" [fail]' % (SENSOR_URL)))
+          debug(DEBUG_REQ_THREAD, '--> [error]')
           fail_count += 1
       except requests.exceptions.Timeout:
-        debug(DEBUG_REQ_THREAD, ('--> "%s" [time]' % (SENSOR_URL)))
+        debug(DEBUG_REQ_THREAD, '--> [timeout]')
         fail_count += 1
       except:
-        debug(DEBUG_REQ_THREAD, ('--> "%s" [expt]' % (SENSOR_URL)))
+        debug(DEBUG_REQ_THREAD, '--> [exception]')
         fail_count += 1
       if fail_count > FAIL_COUNT_TOLERANCE:
         g_pm25 = -1
